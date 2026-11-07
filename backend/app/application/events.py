@@ -30,7 +30,7 @@ class AccessRecorder:
             redacted.append([name, self.marker if protected else raw_value.decode('latin1')])
         return redacted
 
-    def __call__(self, code, path, method, status, found, headers):
+    async def __call__(self, code, path, method, status, found, headers):
         try:
             payload = {
                 'event_id': str(uuid.uuid4()),
@@ -43,6 +43,6 @@ class AccessRecorder:
                 'status': status,
                 'headers': self._redact(headers),
             }
-            self.save(payload)
+            await self.save(payload)
         except Exception:
             _LOG.warning('Evento de acesso não foi gravado')

@@ -1,0 +1,747 @@
+{
+  "timestamp_utc": "2026-11-07T21:19:02.560297+00:00",
+  "code": "QALatency20261107211902",
+  "rounds": [
+    {
+      "label": "50 conex\u00f5es novas",
+      "count": 50,
+      "p50_ms": 383.35,
+      "p95_ms": 537.28,
+      "p99_ms": 1536.75,
+      "statuses": {
+        "302": 50
+      },
+      "connections_created": 50,
+      "correct_locations": 50,
+      "samples": [
+        {
+          "status": 302,
+          "ms": 232.55,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 45.42,
+          "connection.start_tls_ms": 79.19
+        },
+        {
+          "status": 302,
+          "ms": 212.32,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 13.72,
+          "connection.start_tls_ms": 43.31
+        },
+        {
+          "status": 302,
+          "ms": 174.8,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 10.03,
+          "connection.start_tls_ms": 25.91
+        },
+        {
+          "status": 302,
+          "ms": 329.82,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 36.25,
+          "connection.start_tls_ms": 60.23
+        },
+        {
+          "status": 302,
+          "ms": 428.86,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 72.43,
+          "connection.start_tls_ms": 128.49
+        },
+        {
+          "status": 302,
+          "ms": 257.67,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 58.15,
+          "connection.start_tls_ms": 91.64
+        },
+        {
+          "status": 302,
+          "ms": 363.1,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 41.84,
+          "connection.start_tls_ms": 81.07
+        },
+        {
+          "status": 302,
+          "ms": 408.52,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 35.11,
+          "connection.start_tls_ms": 60.88
+        },
+        {
+          "status": 302,
+          "ms": 359.01,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 33.83,
+          "connection.start_tls_ms": 61.94
+        },
+        {
+          "status": 302,
+          "ms": 452.81,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 56.71,
+          "connection.start_tls_ms": 92.71
+        },
+        {
+          "status": 302,
+          "ms": 433.36,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 57.73,
+          "connection.start_tls_ms": 91.63
+        },
+        {
+          "status": 302,
+          "ms": 429.7,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 43.17,
+          "connection.start_tls_ms": 78.8
+        },
+        {
+          "status": 302,
+          "ms": 414.98,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 42.09,
+          "connection.start_tls_ms": 79.7
+        },
+        {
+          "status": 302,
+          "ms": 430.94,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 40.81,
+          "connection.start_tls_ms": 80.75
+        },
+        {
+          "status": 302,
+          "ms": 422.3,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 70.99,
+          "connection.start_tls_ms": 124.85
+        },
+        {
+          "status": 302,
+          "ms": 410.25,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 41.98,
+          "connection.start_tls_ms": 79.64
+        },
+        {
+          "status": 302,
+          "ms": 225.14,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 39.87,
+          "connection.start_tls_ms": 69.89
+        },
+        {
+          "status": 302,
+          "ms": 425.51,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 39.32,
+          "connection.start_tls_ms": 81.98
+        },
+        {
+          "status": 302,
+          "ms": 355.73,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 71.14,
+          "connection.start_tls_ms": 132.59
+        },
+        {
+          "status": 302,
+          "ms": 411.89,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 40.7,
+          "connection.start_tls_ms": 71.8
+        },
+        {
+          "status": 302,
+          "ms": 349.92,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 68.08,
+          "connection.start_tls_ms": 124.57
+        },
+        {
+          "status": 302,
+          "ms": 231.13,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 42.27,
+          "connection.start_tls_ms": 78.85
+        },
+        {
+          "status": 302,
+          "ms": 537.28,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 42.0,
+          "connection.start_tls_ms": 79.15
+        },
+        {
+          "status": 302,
+          "ms": 376.75,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 41.05,
+          "connection.start_tls_ms": 71.34
+        },
+        {
+          "status": 302,
+          "ms": 425.86,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 40.69,
+          "connection.start_tls_ms": 80.25
+        },
+        {
+          "status": 302,
+          "ms": 439.06,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 67.07,
+          "connection.start_tls_ms": 105.55
+        },
+        {
+          "status": 302,
+          "ms": 281.5,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 66.05,
+          "connection.start_tls_ms": 102.4
+        },
+        {
+          "status": 302,
+          "ms": 422.56,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 55.53,
+          "connection.start_tls_ms": 87.59
+        },
+        {
+          "status": 302,
+          "ms": 362.27,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 71.3,
+          "connection.start_tls_ms": 132.08
+        },
+        {
+          "status": 302,
+          "ms": 241.16,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 55.19,
+          "connection.start_tls_ms": 92.34
+        },
+        {
+          "status": 302,
+          "ms": 355.36,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 40.7,
+          "connection.start_tls_ms": 71.55
+        },
+        {
+          "status": 302,
+          "ms": 310.6,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 69.41,
+          "connection.start_tls_ms": 103.03
+        },
+        {
+          "status": 302,
+          "ms": 284.71,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 56.05,
+          "connection.start_tls_ms": 86.86
+        },
+        {
+          "status": 302,
+          "ms": 359.13,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 56.19,
+          "connection.start_tls_ms": 91.2
+        },
+        {
+          "status": 302,
+          "ms": 571.45,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 70.29,
+          "connection.start_tls_ms": 132.95
+        },
+        {
+          "status": 302,
+          "ms": 1536.75,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 55.44,
+          "connection.start_tls_ms": 84.72
+        },
+        {
+          "status": 302,
+          "ms": 350.53,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 68.87,
+          "connection.start_tls_ms": 124.18
+        },
+        {
+          "status": 302,
+          "ms": 445.29,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 69.37,
+          "connection.start_tls_ms": 133.68
+        },
+        {
+          "status": 302,
+          "ms": 442.62,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 54.39,
+          "connection.start_tls_ms": 88.35
+        },
+        {
+          "status": 302,
+          "ms": 408.9,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 66.16,
+          "connection.start_tls_ms": 105.98
+        },
+        {
+          "status": 302,
+          "ms": 403.78,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 67.13,
+          "connection.start_tls_ms": 99.76
+        },
+        {
+          "status": 302,
+          "ms": 352.54,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 68.2,
+          "connection.start_tls_ms": 129.81
+        },
+        {
+          "status": 302,
+          "ms": 375.65,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 67.23,
+          "connection.start_tls_ms": 135.85
+        },
+        {
+          "status": 302,
+          "ms": 260.83,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 67.79,
+          "connection.start_tls_ms": 105.7
+        },
+        {
+          "status": 302,
+          "ms": 438.67,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 66.86,
+          "connection.start_tls_ms": 105.25
+        },
+        {
+          "status": 302,
+          "ms": 372.73,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 66.67,
+          "connection.start_tls_ms": 127.96
+        },
+        {
+          "status": 302,
+          "ms": 376.46,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 70.58,
+          "connection.start_tls_ms": 132.37
+        },
+        {
+          "status": 302,
+          "ms": 440.18,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 69.24,
+          "connection.start_tls_ms": 102.62
+        },
+        {
+          "status": 302,
+          "ms": 389.94,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 68.15,
+          "connection.start_tls_ms": 129.68
+        },
+        {
+          "status": 302,
+          "ms": 409.87,
+          "new_connection": true,
+          "correct_location": true,
+          "connection.connect_tcp_ms": 70.02,
+          "connection.start_tls_ms": 127.86
+        }
+      ]
+    },
+    {
+      "label": "50 conex\u00f5es reutilizadas",
+      "count": 50,
+      "p50_ms": 225.77,
+      "p95_ms": 331.97,
+      "p99_ms": 352.96,
+      "statuses": {
+        "302": 50
+      },
+      "connections_created": 0,
+      "correct_locations": 50,
+      "samples": [
+        {
+          "status": 302,
+          "ms": 111.16,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 126.22,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 155.99,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 143.07,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 132.59,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 222.45,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 154.58,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 126.93,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 352.96,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 227.41,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 202.36,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 150.81,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 116.72,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 279.32,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 346.89,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 331.97,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 243.36,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 126.33,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 192.02,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 321.05,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 159.07,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 249.31,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 315.76,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 189.91,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 224.35,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 303.34,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 246.83,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 312.34,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 162.78,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 205.38,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 318.68,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 221.35,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 182.2,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 202.64,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 267.7,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 303.79,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 307.4,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 202.65,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 261.33,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 290.11,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 181.76,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 210.46,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 296.93,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 301.0,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 287.33,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 277.06,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 275.02,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 227.2,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 275.67,
+          "new_connection": false,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 204.61,
+          "new_connection": false,
+          "correct_location": true
+        }
+      ]
+    }
+  ],
+  "created_status": 201,
+  "health_sequential": {
+    "count": 10,
+    "p50_ms": 33.76,
+    "p95_ms": 39.4,
+    "p99_ms": 39.4,
+    "statuses": {
+      "200": 10
+    },
+    "connections_created": 0,
+    "correct_locations": 0
+  },
+  "cleanup_status": 200
+}

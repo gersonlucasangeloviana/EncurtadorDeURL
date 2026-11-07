@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
@@ -43,7 +44,30 @@ def _link_response(link, base_url):
 
 
 def create_app(cfg, links, projects, paths, cache, record_event, *, lifespan=None):
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI(
+        title='API do Encurtador de URL', version='1.0.0', lifespan=lifespan,
+        description='Operações de links, pastas e paths públicos. Exclusões exigem também a senha de administrador.',
+    )
+
+    def openapi_schema():
+        if app.openapi_schema:
+            return app.openapi_schema
+        schema = get_openapi(title=app.title, version=app.version, description=app.description, routes=app.routes)
+        schema.setdefault('components', {})['securitySchemes'] = {
+            'ApiKey': {'type': 'apiKey', 'in': 'header', 'name': 'X-API-Key'},
+            'AdminPassword': {'type': 'apiKey', 'in': 'header', 'name': 'X-Admin-Password'},
+        }
+        for path, operations in schema['paths'].items():
+            if path.startswith('/api/'):
+                for method, operation in operations.items():
+                    credentials = {'ApiKey': []}
+                    if method == 'delete':
+                        credentials['AdminPassword'] = []
+                    operation['security'] = [credentials]
+        app.openapi_schema = schema
+        return schema
+
+    app.openapi = openapi_schema
     api_key = cfg.api_key.encode()
     admin_password = cfg.admin_password.encode()
 
@@ -68,68 +92,68 @@ def create_app(cfg, links, projects, paths, cache, record_event, *, lifespan=Non
         return JSONResponse(status_code=_ERROR_STATUS[type(error)], content={'detail': detail})
 
     @app.get('/health')
-    def health():
+    async def health():
         return {'status': 'ok'}
 
     @app.get('/api/links')
-    def list_links():
-        with links() as store:
-            return [_link_response(link, cfg.short_base_url) for link in store.list()]
+    async def list_links():
+        async with links() as store:
+            return [_link_response(link, cfg.short_base_url) for link in (await store.list())]
 
     @app.post('/api/links', status_code=201)
-    def add_link(data: LinkInput):
-        with links() as store:
-            link = create_link(store, cfg, **data.model_dump())
+    async def add_link(data: LinkInput):
+        async with links() as store:
+            link = await create_link(store, cfg, **data.model_dump())
         return _link_response(link, cfg.short_base_url)
 
     @app.delete('/api/links/{code}')
-    def remove_link(code: str):
-        with links() as store:
-            delete_link(store, cache, code)
+    async def remove_link(code: str):
+        async with links() as store:
+            await delete_link(store, cache, code)
         return {'ok': True}
 
     @app.get('/api/projects')
-    def list_projects():
-        with projects() as store:
-            return store.list()
+    async def list_projects():
+        async with projects() as store:
+            return await store.list()
 
     @app.post('/api/projects', status_code=201)
-    def add_project(data: Named):
-        with projects() as store:
-            return {'name': create_project(store, data.name)}
+    async def add_project(data: Named):
+        async with projects() as store:
+            return {'name': await create_project(store, data.name)}
 
     @app.delete('/api/projects')
     @app.delete('/api/projects/{name}')
-    def remove_project(name: str):
-        with projects() as store:
-            delete_entry(store, name, 'Pasta')
+    async def remove_project(name: str):
+        async with projects() as store:
+            await delete_entry(store, name, 'Pasta')
         return {'ok': True}
 
     @app.get('/api/paths')
-    def list_paths():
-        with paths() as store:
-            return store.list()
+    async def list_paths():
+        async with paths() as store:
+            return await store.list()
 
     @app.post('/api/paths', status_code=201)
-    def add_path(data: Named):
-        with paths() as store:
-            return {'name': create_path(store, data.name, cfg)}
+    async def add_path(data: Named):
+        async with paths() as store:
+            return {'name': await create_path(store, data.name, cfg)}
 
     @app.delete('/api/paths/{path}')
-    def remove_path(path: str):
-        with paths() as store:
-            delete_entry(store, path, 'Path')
+    async def remove_path(path: str):
+        async with paths() as store:
+            await delete_entry(store, path, 'Path')
         return {'ok': True}
 
     @app.get('/{code}')
     @app.head('/{code}')
     @app.get('/{path}/{code}')
     @app.head('/{path}/{code}')
-    def redirect(request: Request, code: str, path: str | None = None):
-        with links() as store:
-            result = resolve(code, path, store, cache)
+    async def redirect(request: Request, code: str, path: str | None = None):
+        async with links() as store:
+            result = await resolve(code, path, store, cache)
         status = _REDIRECT_STATUS[result.outcome]
-        record_event(code, path, request.method, status, result.found, request.scope['headers'])
+        await record_event(code, path, request.method, status, result.found, request.scope['headers'])
         if result.outcome is not Outcome.REDIRECT:
             raise HTTPException(status, headers=_NO_STORE)
         return RedirectResponse(result.destination, status_code=status, headers=_NO_STORE)

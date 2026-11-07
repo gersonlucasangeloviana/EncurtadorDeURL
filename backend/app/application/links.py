@@ -1,4 +1,4 @@
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timezone
 from enum import Enum, auto
 from typing import Protocol
@@ -18,19 +18,19 @@ class InsertConflict(Enum):
 
 
 class LinkStore(Protocol):
-    def next_sequence(self) -> int: ...
-    def insert(self, link: Link) -> InsertConflict | None: ...
-    def list(self) -> list[Link]: ...
-    def lock(self, code: str) -> AbstractContextManager[None]: ...
-    def get(self, code: str) -> Link | None: ...
-    def mark_deleted(self, link: Link) -> None: ...
+    async def next_sequence(self) -> int: ...
+    async def insert(self, link: Link) -> InsertConflict | None: ...
+    async def list(self) -> list[Link]: ...
+    def lock(self, code: str) -> AbstractAsyncContextManager[None]: ...
+    async def get(self, code: str) -> Link | None: ...
+    async def mark_deleted(self, link: Link) -> None: ...
 
 
 class Invalidation(Protocol):
-    def invalidate(self, code: str) -> None: ...
+    async def invalidate(self, code: str) -> None: ...
 
 
-def create_link(
+async def create_link(
     store: LinkStore, cfg, destination_url: str, short_code: str | None = None,
     project_name: str | None = None, public_path: str | None = None,
     expires_at: datetime | None = None,
@@ -57,10 +57,10 @@ def create_link(
         raise InvalidInput('Path inexistente')
 
     for _ in range(cfg.short_code_generation_max_attempts):
-        sequence = store.next_sequence()
+        sequence = await store.next_sequence()
         code = short_code if short_code is not None else generate_code(sequence, cfg)
         link = Link(code, sequence, destination, project_name or None, public_path or None, expires_at)
-        match store.insert(link):
+        match await store.insert(link):
             case None:
                 return link
             case InsertConflict.CODE:
@@ -75,20 +75,20 @@ def create_link(
     raise Unavailable('Não foi possível gerar um código')
 
 
-def delete_link(store: LinkStore, cache: Invalidation, code: str) -> None:
+async def delete_link(store: LinkStore, cache: Invalidation, code: str) -> None:
     if not is_link_code(code):
         raise NotFound('Link inexistente')
     try:
-        with store.lock(code):
-            link = store.get(code)
+        async with store.lock(code):
+            link = await store.get(code)
             if link is None or link.deleted:
                 raise NotFound('Link inexistente')
-            cache.invalidate(code)
+            await cache.invalidate(code)
             try:
-                store.mark_deleted(link)
+                await store.mark_deleted(link)
             except StorageFailure:
                 try:
-                    cache.invalidate(code)
+                    await cache.invalidate(code)
                 except CacheUnavailable:
                     pass
                 raise

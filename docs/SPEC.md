@@ -8,6 +8,8 @@ O login Google foi considerado, mas removido para facilitar o uso nos testes. O 
 
 O backend usa Python e FastAPI. O painel usa React, Vite e Nginx. PostgreSQL guarda os dados operacionais e os eventos de acesso em JSONB. Redis guarda resoluções de links.
 
+Todas as rotas do backend e as operações que acessam PostgreSQL ou Redis usam execução assíncrona. O PostgreSQL usa SQLAlchemy `AsyncSession` com psycopg 3, mantendo a URL `postgresql+psycopg://...`; Redis usa `redis.asyncio`. Sessões não são compartilhadas entre requisições. Inicialização, retenção e encerramento das conexões são aguardados. Inspeção e criação de metadados usam `AsyncConnection.run_sync`, que adapta a API de metadados do SQLAlchemy ao driver assíncrono. Validações e cálculos sem entrada/saída permanecem síncronos.
+
 A composição da aplicação em `backend/app/main.py` conecta os adaptadores. A camada HTTP está em `backend/app/web.py`; as operações e suas interfaces estão em `backend/app/application/`. O domínio, em `backend/app/core.py` e `backend/app/domain.py`, é independente dos frameworks. Os adaptadores em `backend/app/infrastructure/` implementam as interfaces usadas pela aplicação. No painel, os componentes usam as funções de `frontend/src/api.js` para acessar a API.
 
 A publicação prevista usa uma VPS gerenciada pelo Dokploy. Dockerfiles constroem as imagens e o Docker Compose descreve serviços, volumes e redes. O ambiente fornece domínios e conexões.
@@ -140,7 +142,7 @@ A gravação de eventos é tentada para os três resultados. Prévias, robôs e 
 
 Meta mantida: resolver o link e responder ao redirecionamento em menos de 100 ms. Referência inicial de carga: até 50 acessos simultâneos. A estimativa informada de 500 acessos simultâneos para a VPS não é uma medição desta aplicação.
 
-Simultaneidade não define sozinha acessos por segundo, cauda de latência ou capacidade de disco. A implementação deverá medir cache preenchido, cache vazio e Redis indisponível. A gravação síncrona do evento no PostgreSQL integra o caminho da resposta e deve ser incluída na medição.
+Simultaneidade não define sozinha acessos por segundo, cauda de latência ou capacidade de disco. A implementação deverá medir cache preenchido, cache vazio e Redis indisponível. A gravação do evento no PostgreSQL usa entrada/saída assíncrona, mas continua sendo aguardada antes da resposta e deve ser incluída na medição. Async não representa uma fila de eventos nem comprova por si só ganho de latência ou ausência de perdas por saturação.
 
 Ainda falta fixar percentil e fronteira de medição. Proposta: p99 abaixo de 100 ms entre chegada ao backend e resposta, sob 50 acessos simultâneos, sem incluir DNS, handshake TLS, rede do visitante ou carregamento do destino. Essa proposta não é uma garantia já comprovada.
 
@@ -164,7 +166,7 @@ O limite do painel reduz requisições automatizadas; não há filtro de robôs 
 
 A API insere diretamente cada evento em `access_events`, com uma chave numérica e um campo `payload JSONB` contendo o evento completo sanitizado. A tabela é criada na inicialização se não existir. Os dados são apenas armazenados nesta versão, sem relatórios.
 
-A gravação usa uma transação própria e é síncrona. As gravações de eventos usam até quatro conexões separadas das operações de links, com espera de até 20 ms por uma conexão livre e limite de 100 ms por instrução no servidor. Se a gravação falhar, a API registra um aviso sem o payload e devolve o resultado da resolução. A cada 30 segundos, a API remove até 10.000 registros anteriores à janela dos `ANALYTICS_MAX_EVENTS` IDs mais recentes. A disponibilidade do PostgreSQL continua necessária para resolver cache vazio e gerenciar links. A meta de desempenho deve ser validada com a escrita e a limpeza ativas.
+A gravação usa uma transação própria e entrada/saída assíncrona, aguardada com `await` antes da resposta. Não há fila em memória ou Redis nesta versão. As gravações de eventos usam até quatro conexões separadas das operações de links, com espera de até 20 ms por uma conexão livre e limite de 100 ms por instrução no servidor. Se a gravação falhar, a API registra um aviso sem o payload e devolve o resultado da resolução. A cada 30 segundos, a API remove até 10.000 registros anteriores à janela dos `ANALYTICS_MAX_EVENTS` IDs mais recentes. A disponibilidade do PostgreSQL continua necessária para resolver cache vazio e gerenciar links. A meta de desempenho deve ser validada com a escrita e a limpeza ativas.
 
 ## 11. Configuração pelo ambiente
 

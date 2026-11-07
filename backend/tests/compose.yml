@@ -1,0 +1,38 @@
+# Isolated integration environment: no host ports or production volumes.
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shortener_async_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test-only-password
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U test -d shortener_async_test']
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  redis-test:
+    image: redis:7-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  tests:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    environment:
+      SHORTENER_INTEGRATION: '1'
+      DATABASE_URL: postgresql+psycopg://test:test-only-password@postgres-test/shortener_async_test
+      REDIS_URL: redis://redis-test:6379/0
+      SHORT_CODE_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      API_KEY: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      ADMIN_PASSWORD: test-administrator-password
+      ALLOWED_HOSTS: testserver
+    depends_on:
+      postgres-test: {condition: service_healthy}
+      redis-test: {condition: service_healthy}

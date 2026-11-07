@@ -1,12 +1,11 @@
 import asyncio
 import logging
-from contextlib import asynccontextmanager, contextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from functools import partial
 
-from redis import Redis
-from sqlalchemy import create_engine
+from redis.asyncio import Redis
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from .application.events import AccessRecorder
 from .config import settings
@@ -23,24 +22,24 @@ _LOG = logging.getLogger('shortener')
 async def maintain_event_retention(engine, max_events):
     while True:
         try:
-            await asyncio.to_thread(prune_access_events, engine, max_events)
+            await prune_access_events(engine, max_events)
         except SQLAlchemyError:
             _LOG.warning('Não foi possível aplicar a retenção de eventos de acesso')
         await asyncio.sleep(30)
 
 
 def build_app(cfg):
-    engine = create_engine(
+    engine = create_async_engine(
         cfg.database_url, pool_pre_ping=True, hide_parameters=True,
         connect_args={'connect_timeout': 2},
     )
-    sessions = sessionmaker(engine)
-    event_engine = create_engine(
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    event_engine = create_async_engine(
         cfg.database_url, pool_pre_ping=True, hide_parameters=True,
         pool_size=4, max_overflow=0, pool_timeout=0.02,
         connect_args={'connect_timeout': 2, 'options': '-c statement_timeout=100ms'},
     )
-    event_sessions = sessionmaker(event_engine)
+    event_sessions = async_sessionmaker(event_engine, expire_on_commit=False)
     redis = Redis.from_url(
         cfg.redis_url, decode_responses=True,
         socket_connect_timeout=cfg.redis_socket_timeout_seconds,
@@ -55,15 +54,18 @@ def build_app(cfg):
         cfg.analytics_redacted_header_pattern, cfg.analytics_redaction_marker,
     )
 
-    @contextmanager
-    def store(repository):
-        with sessions() as db:
+    @asynccontextmanager
+    async def store(repository):
+        async with sessions() as db:
             yield repository(db)
 
     @asynccontextmanager
     async def lifespan(app):
-        try:
-            initialize_schema(engine, cfg.fingerprint())
+        async with AsyncExitStack() as resources:
+            resources.push_async_callback(engine.dispose)
+            resources.push_async_callback(event_engine.dispose)
+            resources.push_async_callback(redis.aclose)
+            await initialize_schema(engine, cfg.fingerprint())
             retention = asyncio.create_task(maintain_event_retention(engine, cfg.analytics_max_events))
             try:
                 yield
@@ -71,10 +73,6 @@ def build_app(cfg):
                 retention.cancel()
                 with suppress(asyncio.CancelledError):
                     await retention
-        finally:
-            redis.close()
-            event_engine.dispose()
-            engine.dispose()
 
     return create_app(
         cfg, partial(store, PostgresLinks), partial(store, postgres_projects),

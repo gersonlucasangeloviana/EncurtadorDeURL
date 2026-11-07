@@ -32,12 +32,13 @@ header {
   color: #087c70;
 }
 main {
-  padding-top: 36px !important;
+  padding-top: 0 !important;
   padding-bottom: 60px !important;
 }
 h1 {
   font-size: 2.2rem;
   letter-spacing: -.04em;
+  margin-top: 0;
   margin-bottom: 4px;
 }
 h2 {

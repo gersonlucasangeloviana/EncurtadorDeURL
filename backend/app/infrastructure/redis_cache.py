@@ -29,9 +29,9 @@ class RedisLinkCache:
     def _fill_key(self, code):
         return f'{self.prefix}:fill:{code}'
 
-    def get(self, code: str) -> CachedLink | None:
+    async def get(self, code: str) -> CachedLink | None:
         try:
-            raw = self.client.get(self._entry_key(code))
+            raw = await self.client.get(self._entry_key(code))
         except RedisError as exc:
             raise CacheUnavailable() from exc
         if not raw:
@@ -48,15 +48,15 @@ class RedisLinkCache:
             return None
         return CachedLink(destination, path, expires_at)
 
-    def begin_fill(self, code: str) -> str:
+    async def begin_fill(self, code: str) -> str:
         token = uuid.uuid4().hex
         try:
-            self.client.set(self._fill_key(code), token, ex=self.fill_ttl_seconds)
+            await self.client.set(self._fill_key(code), token, ex=self.fill_ttl_seconds)
         except RedisError as exc:
             raise CacheUnavailable() from exc
         return token
 
-    def publish(self, link: Link, token: str) -> None:
+    async def publish(self, link: Link, token: str) -> None:
         now = datetime.now(timezone.utc)
         deadline = now + timedelta(seconds=self.ttl_seconds)
         if link.expires_at is not None:
@@ -70,15 +70,15 @@ class RedisLinkCache:
             'expires_at': link.expires_at.isoformat() if link.expires_at is not None else None,
         }
         try:
-            self.client.eval(
+            await self.client.eval(
                 _PUBLISH, 2, self._fill_key(link.short_code), self._entry_key(link.short_code),
                 token, json.dumps(entry), int(deadline.timestamp() * 1000),
             )
         except RedisError as exc:
             raise CacheUnavailable() from exc
 
-    def invalidate(self, code: str) -> None:
+    async def invalidate(self, code: str) -> None:
         try:
-            self.client.delete(self._entry_key(code), self._fill_key(code))
+            await self.client.delete(self._entry_key(code), self._fill_key(code))
         except RedisError as exc:
             raise CacheUnavailable() from exc

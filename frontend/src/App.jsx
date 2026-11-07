@@ -192,7 +192,7 @@ export default function App() {
 
   return (
     <>
-      <header><div className="wrap bar"><strong>Encurtador</strong></div></header>
+      <header><div className="wrap bar"><strong>Encurtador de Links do Gerson Viana</strong></div></header>
       <main className="wrap">
         <h1>Links mais simples.</h1>
         <p>Crie e organize links. Todos podem visualizar e cadastrar dados. A exclusão exige senha de administrador.</p>

@@ -15,10 +15,10 @@ class EmptyStore:
     def lock(self, code):
         return nullcontext()
 
-    def get(self, code):
+    async def get(self, code):
         return None
 
-    def remove(self, name):
+    async def remove(self, name):
         return Removal.MISSING
 
 
@@ -41,6 +41,16 @@ class AccessTests(unittest.TestCase):
     def test_edits_are_unavailable(self):
         response = self.client.patch('/api/links/code', headers=self.api, json={'active': False})
         self.assertEqual(response.status_code, 405)
+
+    def test_swagger_documents_routes_and_credentials(self):
+        self.assertEqual(self.client.get('/docs').status_code, 200)
+        schema = self.client.get('/openapi.json').json()
+        self.assertEqual(schema['components']['securitySchemes']['ApiKey']['name'], 'X-API-Key')
+        self.assertEqual(schema['components']['securitySchemes']['AdminPassword']['name'], 'X-Admin-Password')
+        self.assertEqual(schema['paths']['/api/links']['get']['security'], [{'ApiKey': []}])
+        self.assertEqual(schema['paths']['/api/links/{code}']['delete']['security'],
+                         [{'ApiKey': [], 'AdminPassword': []}])
+        self.assertNotIn('security', schema['paths']['/health']['get'])
 
     def test_malformed_host_cannot_bypass_api_or_admin_authentication(self):
         headers = {'Host': 'testserver:#'}

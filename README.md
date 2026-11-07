@@ -26,13 +26,15 @@ flowchart LR
 
 No backend, `backend/app/core.py` e `backend/app/domain.py` contêm as regras e os tipos do domínio. `backend/app/application/` concentra as operações e define as interfaces usadas para consultar e persistir dados. `backend/app/web.py` adapta HTTP para essas operações, `backend/app/infrastructure/` implementa o acesso ao PostgreSQL e ao Redis, e `backend/app/main.py` conecta as camadas. No frontend, `frontend/src/App.jsx` reúne os componentes e `frontend/src/api.js` concentra as chamadas HTTP.
 
+As rotas e as operações de entrada/saída do backend são assíncronas: PostgreSQL usa `AsyncSession` do SQLAlchemy com psycopg 3 e Redis usa `redis.asyncio`. Cada operação recebe sua própria sessão; as esperas por banco, cache e bloqueios transacionais usam `await`. A inicialização e a retenção de eventos também usam o driver assíncrono, e as conexões são encerradas no desligamento. As validações e os cálculos sem entrada/saída permanecem funções comuns. O formato de `DATABASE_URL` continua `postgresql+psycopg://...` e a mudança não exige migração das tabelas.
+
 O PostgreSQL armazena links, pastas e paths compartilhados. O código curto e o destino são únicos globalmente. Uma sequência separada alimenta o gerador automático Feistel de 40 bits com BLAKE2b e Base62. Nomes escolhidos pelo usuário compartilham o mesmo espaço de códigos. A pasta organiza os links e o path faz parte da URL pública. Os registros são compartilhados entre todos os visitantes.
 
 Links são excluídos logicamente: código e destino continuam reservados para impedir que uma URL antiga passe a apontar para outro cadastro. Pastas e paths associados a links não podem ser removidos. A aplicação registra uma impressão digital dos parâmetros do gerador e recusa alterações incompatíveis; mudar chave, alfabeto ou algoritmo exige planejar uma migração.
 
 A API tenta registrar cada `GET` e `HEAD` processado pela rota curta, inclusive respostas `404` e `410`. Os eventos ficam em `access_events.payload` (JSONB), com os valores dos headers de credenciais ocultados. A tabela é criada na inicialização se ainda não existir.
 
-A gravação é síncrona e usa um conjunto separado de até quatro conexões com o PostgreSQL, com espera de até 20 ms por uma conexão livre e limite de 100 ms por instrução no servidor. Se a escrita falhar, a API registra um aviso sem o conteúdo do evento e segue com a resposta. A cada 30 segundos, a API remove até 10.000 registros que ficaram fora da janela dos `ANALYTICS_MAX_EVENTS` IDs mais recentes (100.000 por padrão). A meta de desempenho precisa ser medida com a escrita e a limpeza ativas.
+A gravação usa entrada/saída assíncrona, mas ainda é aguardada antes da resposta: esta versão não adiciona uma fila de eventos. Ela usa um conjunto separado de até quatro conexões com o PostgreSQL, com espera de até 20 ms por uma conexão livre e limite de 100 ms por instrução no servidor. Se a escrita falhar, a API registra um aviso sem o conteúdo do evento e segue com a resposta. A cada 30 segundos, a API remove até 10.000 registros que ficaram fora da janela dos `ANALYTICS_MAX_EVENTS` IDs mais recentes (100.000 por padrão). A migração para async não elimina a possibilidade de perder eventos por saturação; a meta de desempenho precisa ser medida com a escrita e a limpeza ativas.
 
 ## Cache e consistência
 
@@ -53,6 +55,12 @@ A publicação prevista usa Docker Compose e Dokploy, com HTTPS configurado no p
 
 O painel é aberto e seu conteúdo é compartilhado. Cada exclusão exige a senha de administrador. Na porta do painel, o Nginx substitui a chave API fornecida pelo cliente pela chave interna. Na porta do domínio curto, a API valida a chave fornecida pelo cliente nas rotas `/api/`. O painel limita `/api/` a 30 requisições por minuto por IP, com rajada de 20. Exclusões têm limite adicional de 5 por minuto, com rajada de 2. No domínio curto o limite é de 20 por segundo por IP, com rajada de 50. As duas portas têm cotas globais independentes. O painel admite 20 por segundo, com rajada de 60. O domínio curto admite 100 por segundo, com rajada de 100. O Nginx usa dois buffers grandes de 4 KiB para os cabeçalhos. Se houver CDN na frente do Traefik, valide a cadeia de confiança para que o limite considere o IP do visitante.
 
+### Documentação da API
+
+Acesse `/docs` no domínio do painel ou no domínio curto para consultar e experimentar as rotas no Swagger. O esquema OpenAPI está em `/openapi.json` e a documentação alternativa em `/redoc`. As operações incluem links (`/api/links`), pastas (`/api/projects`), paths (`/api/paths`), verificação de saúde (`/health`) e redirecionamentos públicos. A raiz `/api` não é uma operação de consulta; use os caminhos específicos exibidos na documentação.
+
+No domínio curto, use **Authorize** no Swagger para informar a `API_KEY`. Para operações de exclusão, informe também a senha de administrador. No domínio do painel, o Nginx fornece a chave API automaticamente; a senha de administrador continua necessária para exclusões. Não compartilhe essas credenciais.
+
 A versão anterior usava tabelas ligadas a usuários Google. A API identifica esse esquema pela coluna `links.owner_id` e interrompe a inicialização antes de modificá-lo. Migre os dados antes de reutilizá-los ou use um banco novo para testes.
 
 Na inicialização, a API cria tabelas ausentes. Mudanças em tabelas existentes exigem migração separada. O volume `postgres_data` preserva os dados do PostgreSQL.
@@ -66,6 +74,15 @@ cd frontend && npm ci && npm run build
 ```
 
 A suíte automatizada cobre validação de URLs e nomes, geração de códigos, autorização, sanitização dos eventos e cenários simulados de cache. Em containers isolados com PostgreSQL, Redis e Nginx, a revisão também verificou conflitos concorrentes no cadastro, expiração, invalidação e recuperação após reiniciar o Redis.
+
+Para executar os testes unitários e de integração assíncrona com PostgreSQL e Redis reais, sem portas públicas nem volumes de produção:
+
+```sh
+docker compose -p shortener-async-qa -f backend/tests/compose.yml up --build --abort-on-container-exit --exit-code-from tests
+docker compose -p shortener-async-qa -f backend/tests/compose.yml down -v
+```
+
+Os testes de integração usam um banco exclusivo e descartável. Cobrem cadastro concorrente, cache, expiração, exclusão, ocultação de credenciais, Redis indisponível, retenção, proteção do esquema e liberação de bloqueios após cancelamento. A suíte unitária também verifica que 50 leituras pendentes no cache não impedem a resposta do health.
 
 O aceite ainda exige validar a implantação e medir a meta de menos de 100 ms com 50 acessos simultâneos no ambiente Dokploy.
 

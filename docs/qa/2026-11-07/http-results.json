@@ -1,0 +1,769 @@
+{
+  "tag": "QA20261107211354",
+  "time_utc": "2026-11-07T21:14:13.303207+00:00",
+  "results": [
+    {
+      "test": "raiz painel",
+      "pass": true,
+      "status": 200
+    },
+    {
+      "test": "HTTP para HTTPS painel",
+      "pass": true,
+      "status": 301,
+      "location": "https://short.vianadev.work/"
+    },
+    {
+      "test": "painel/docs",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "conteúdo documentação painel/docs",
+      "pass": false
+    },
+    {
+      "test": "painel/redoc",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "conteúdo documentação painel/redoc",
+      "pass": false
+    },
+    {
+      "test": "painel/openapi.json",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "contrato OpenAPI painel",
+      "pass": false,
+      "content_type": "text/html"
+    },
+    {
+      "test": "raiz curto",
+      "pass": true,
+      "status": 404
+    },
+    {
+      "test": "HTTP para HTTPS curto",
+      "pass": true,
+      "status": 301,
+      "location": "https://apishort.vianadev.work/"
+    },
+    {
+      "test": "curto/docs",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "conteúdo documentação curto/docs",
+      "pass": true
+    },
+    {
+      "test": "curto/redoc",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "conteúdo documentação curto/redoc",
+      "pass": true
+    },
+    {
+      "test": "curto/openapi.json",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "contrato OpenAPI curto",
+      "pass": false,
+      "content_type": "application/json"
+    },
+    {
+      "test": "health público",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "API sem chave",
+      "pass": true,
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "test": "API chave inválida",
+      "pass": true,
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "test": "API chave válida",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "painel injeta chave interna",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "admin local válido em registro inexistente",
+      "pass": true,
+      "status": 404,
+      "expected": 404
+    },
+    {
+      "test": "criar projects",
+      "pass": true,
+      "status": 201,
+      "expected": 201
+    },
+    {
+      "test": "duplicidade projects",
+      "pass": true,
+      "status": 409,
+      "expected": 409
+    },
+    {
+      "test": "criar paths",
+      "pass": true,
+      "status": 201,
+      "expected": 201
+    },
+    {
+      "test": "duplicidade paths",
+      "pass": true,
+      "status": 409,
+      "expected": 409
+    },
+    {
+      "test": "criar automatico",
+      "pass": true,
+      "status": 201,
+      "expected": 201
+    },
+    {
+      "test": "criar personalizado",
+      "pass": true,
+      "status": 201,
+      "expected": 201
+    },
+    {
+      "test": "criar expiracao",
+      "pass": true,
+      "status": 201,
+      "expected": 201
+    },
+    {
+      "test": "expiração antes do prazo",
+      "pass": true,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354expiracao"
+    },
+    {
+      "test": "GET automático",
+      "pass": true,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354automatico"
+    },
+    {
+      "test": "HEAD automático",
+      "pass": true,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354automatico"
+    },
+    {
+      "test": "repetição automático",
+      "pass": true,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354automatico"
+    },
+    {
+      "test": "GET personalizado com path",
+      "pass": true,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354personalizado"
+    },
+    {
+      "test": "HEAD personalizado com path",
+      "pass": true,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354personalizado"
+    },
+    {
+      "test": "repetição personalizado com path",
+      "pass": true,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354personalizado"
+    },
+    {
+      "test": "path incorreto",
+      "pass": true,
+      "status": 404,
+      "cache_control": "no-store",
+      "location": null
+    },
+    {
+      "test": "path omitido",
+      "pass": true,
+      "status": 404,
+      "cache_control": "no-store",
+      "location": null
+    },
+    {
+      "test": "código diferencia caixa",
+      "pass": true,
+      "status": 404,
+      "cache_control": "no-store",
+      "location": null
+    },
+    {
+      "test": "inexistente",
+      "pass": true,
+      "status": 404,
+      "cache_control": "no-store",
+      "location": null
+    },
+    {
+      "test": "destino duplicado",
+      "pass": true,
+      "status": 409,
+      "expected": 409
+    },
+    {
+      "test": "código duplicado global",
+      "pass": true,
+      "status": 409,
+      "expected": 409
+    },
+    {
+      "test": "destino inválido 1",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "destino inválido 2",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "destino inválido 3",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "destino inválido 4",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "destino inválido 5",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "destino inválido 6",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "destino inválido 7",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "destino inválido 8",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "nome reservado",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "pasta inexistente",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "path inexistente",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "expiração passada",
+      "pass": true,
+      "status": 422,
+      "expected": 422
+    },
+    {
+      "test": "edição bloqueada",
+      "pass": true,
+      "status": 405,
+      "expected": 405
+    },
+    {
+      "test": "exclusão sem senha",
+      "pass": true,
+      "status": 403,
+      "expected": 403
+    },
+    {
+      "test": "exclusão senha inválida",
+      "pass": true,
+      "status": 403,
+      "expected": 403
+    },
+    {
+      "test": "pasta em uso",
+      "pass": true,
+      "status": 409,
+      "expected": 409
+    },
+    {
+      "test": "path em uso",
+      "pass": true,
+      "status": 409,
+      "expected": 409
+    },
+    {
+      "test": "expiração após prazo",
+      "pass": false,
+      "status": 302,
+      "cache_control": "no-store",
+      "location": "https://example.com/?qa=QA20261107211354expiracao"
+    },
+    {
+      "test": "50 acessos simultâneos externos",
+      "pass": true,
+      "count": 50,
+      "p50_ms": 375.65,
+      "p95_ms": 430.32,
+      "p99_ms": 641.74,
+      "max_ms": 641.74,
+      "statuses": {
+        "302": 50
+      },
+      "samples": [
+        {
+          "status": 302,
+          "ms": 117.52,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 425.96,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 220.15,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 270.83,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 183.87,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 375.6,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 349.91,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 299.57,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 380.44,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 210.5,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 400.13,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 129.09,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 325.97,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 330.54,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 269.1,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 416.9,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 351.47,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 258.11,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 208.11,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 421.62,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 344.28,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 376.03,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 275.4,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 641.74,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 209.74,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 349.6,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 337.29,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 331.65,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 342.74,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 396.39,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 289.2,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 382.33,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 425.72,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 434.01,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 379.29,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 384.24,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 339.47,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 407.97,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 426.95,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 409.53,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 423.36,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 428.31,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 375.7,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 380.15,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 339.62,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 404.28,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 391.67,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 390.01,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 393.12,
+          "correct_location": true
+        },
+        {
+          "status": 302,
+          "ms": 430.32,
+          "correct_location": true
+        }
+      ]
+    },
+    {
+      "test": "concorrência de cadastro",
+      "pass": true,
+      "statuses": [
+        409,
+        409,
+        201
+      ]
+    },
+    {
+      "test": "criar removível projects",
+      "pass": true,
+      "status": 201,
+      "expected": 201
+    },
+    {
+      "test": "excluir removível projects",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "criar removível paths",
+      "pass": true,
+      "status": 201,
+      "expected": 201
+    },
+    {
+      "test": "excluir removível paths",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "limpeza fHD67ia",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "excluído retorna 410 fHD67ia",
+      "pass": true,
+      "status": 410,
+      "cache_control": "no-store",
+      "location": null
+    },
+    {
+      "test": "limpeza QA20261107211354Custom",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "excluído retorna 410 QA20261107211354Custom",
+      "pass": true,
+      "status": 410,
+      "cache_control": "no-store",
+      "location": null
+    },
+    {
+      "test": "limpeza QA20261107211354Expire",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "excluído retorna 410 QA20261107211354Expire",
+      "pass": true,
+      "status": 410,
+      "cache_control": "no-store",
+      "location": null
+    },
+    {
+      "test": "limpeza QA20261107211354Race",
+      "pass": true,
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "test": "excluído retorna 410 QA20261107211354Race",
+      "pass": true,
+      "status": 410,
+      "cache_control": "no-store",
+      "location": null
+    }
+  ],
+  "created": [
+    {
+      "kind": "projects",
+      "name": "QA20261107211354 Pasta"
+    },
+    {
+      "kind": "paths",
+      "name": "QA20261107211354Path"
+    },
+    {
+      "kind": "link",
+      "short_code": "fHD67ia",
+      "destination_url": "https://example.com/?qa=QA20261107211354automatico",
+      "public_path": null,
+      "project_name": null,
+      "active": true,
+      "expires_at": null,
+      "url": "https://apishort.vianadev.work/fHD67ia",
+      "deleted": true
+    },
+    {
+      "kind": "link",
+      "short_code": "QA20261107211354Custom",
+      "destination_url": "https://example.com/?qa=QA20261107211354personalizado",
+      "public_path": "QA20261107211354Path",
+      "project_name": "QA20261107211354 Pasta",
+      "active": true,
+      "expires_at": null,
+      "url": "https://apishort.vianadev.work/QA20261107211354Path/QA20261107211354Custom",
+      "deleted": true
+    },
+    {
+      "kind": "link",
+      "short_code": "QA20261107211354Expire",
+      "destination_url": "https://example.com/?qa=QA20261107211354expiracao",
+      "public_path": null,
+      "project_name": null,
+      "active": true,
+      "expires_at": "2026-11-07T21:14:04.855240+00:00",
+      "url": "https://apishort.vianadev.work/QA20261107211354Expire",
+      "deleted": true
+    },
+    {
+      "kind": "link",
+      "short_code": "QA20261107211354Race",
+      "destination_url": "https://example.com/?qa=QA20261107211354race",
+      "public_path": null,
+      "project_name": null,
+      "active": true,
+      "expires_at": null,
+      "url": "https://apishort.vianadev.work/QA20261107211354Race",
+      "deleted": true
+    }
+  ]
+}

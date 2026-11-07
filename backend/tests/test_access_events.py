@@ -1,6 +1,6 @@
 import unittest
 from contextlib import nullcontext
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 from fastapi.testclient import TestClient
 
@@ -10,16 +10,17 @@ from app.config import Settings
 from app.web import create_app
 
 
-class EventTests(unittest.TestCase):
-    def test_redaction_keeps_repeated_headers_and_cannot_be_disabled(self):
-        save = Mock()
+class EventTests(unittest.IsolatedAsyncioTestCase):
+    async def test_redaction_keeps_repeated_headers_and_cannot_be_disabled(self):
+        save = AsyncMock()
         record = AccessRecorder(save, 'x-custom-id', r'(?i)^x-private-', '[hidden]')
-        record('abc', None, 'HEAD', 302, True, [
+        await record('abc', None, 'HEAD', 302, True, [
             (b'Authorization', b'secret'), (b'authorization', b'another'),
             (b'X-Admin-Password', b'admin'), (b'X-Custom-ID', b'id'),
             (b'X-Private-Header', b'private'), (b'user-agent', b'test-agent'),
         ])
-        event = save.call_args.args[0]
+        save.assert_awaited_once()
+        event = save.await_args.args[0]
         self.assertEqual(event['headers'], [
             ['Authorization', '[hidden]'], ['authorization', '[hidden]'],
             ['X-Admin-Password', '[hidden]'], ['X-Custom-ID', '[hidden]'],
@@ -27,15 +28,16 @@ class EventTests(unittest.TestCase):
         ])
         self.assertEqual((event['short_code'], event['method'], event['status']), ('abc', 'HEAD', 302))
 
-    def test_invalid_custom_pattern_fails_at_initialization(self):
+    async def test_invalid_custom_pattern_fails_at_initialization(self):
         with self.assertRaisesRegex(ValueError, 'ANALYTICS_REDACTED_HEADER_PATTERN'):
             AccessRecorder(Mock(), '', '[', '[REDACTED]')
 
-    def test_failed_insert_does_not_change_public_response(self):
-        save = Mock(side_effect=RuntimeError('failed'))
+    async def test_failed_insert_does_not_change_public_response(self):
+        save = AsyncMock(side_effect=RuntimeError('failed'))
         record = AccessRecorder(save, '', '', '[REDACTED]')
         cfg = Settings(_env_file=None, allowed_hosts='testserver')
         cache = Mock()
+        cache.get = AsyncMock()
         cache.get.return_value = CachedLink('https://example.com', None, None)
         store = lambda: nullcontext(Mock())
         app = create_app(cfg, store, store, store, cache, record)
@@ -47,5 +49,5 @@ class EventTests(unittest.TestCase):
         self.assertEqual(redirect.headers['location'], 'https://example.com')
         self.assertEqual(missing.status_code, 404)
         self.assertEqual(missing.headers['cache-control'], 'no-store')
-        self.assertEqual(save.call_count, 2)
+        self.assertEqual(save.await_count, 2)
         self.assertNotIn('sensitive', '\n'.join(logs.output))

@@ -1,0 +1,82 @@
+[
+  {
+    "test": "clock",
+    "local_utc": "2026-11-07T21:14:56.986935+00:00",
+    "server_date": "Sat, 07 Nov 2026 21:14:56 GMT",
+    "difference_seconds": 0.986944
+  },
+  {
+    "test": "published_schema",
+    "title": "FastAPI",
+    "security_schemes": null,
+    "link_security": null
+  },
+  {
+    "test": "panel/docs",
+    "status": 200,
+    "content_type": "text/html",
+    "is_panel": true
+  },
+  {
+    "test": "panel/redoc",
+    "status": 200,
+    "content_type": "text/html",
+    "is_panel": true
+  },
+  {
+    "test": "panel/openapi.json",
+    "status": 200,
+    "content_type": "text/html",
+    "is_panel": true
+  },
+  {
+    "test": "expiry_create",
+    "status": 201,
+    "expires_at": "2026-11-07T21:15:04+00:00"
+  },
+  {
+    "test": "expiry_before",
+    "status": 302,
+    "date": "Sat, 07 Nov 2026 21:14:57 GMT"
+  },
+  {
+    "test": "expiry_after",
+    "status": 410,
+    "date": "Sat, 07 Nov 2026 21:15:04 GMT",
+    "cache_control": "no-store",
+    "passed": true
+  },
+  {
+    "test": "expiry_cleanup",
+    "status": 200
+  },
+  {
+    "test": "remaining_links",
+    "count": 1,
+    "test_codes": []
+  },
+  {
+    "test": "deleted_code_reserved",
+    "status": 409,
+    "passed": true
+  },
+  {
+    "test": "deleted_destination_reserved",
+    "status": 409,
+    "passed": true
+  },
+  {
+    "test": "retained_projects",
+    "status": 409,
+    "entry_name": "QA20261107211354 Pasta"
+  },
+  {
+    "test": "retained_paths",
+    "status": 409,
+    "entry_name": "QA20261107211354Path"
+  },
+  {
+    "test": "final_test_links",
+    "active_test_codes": []
+  }
+]
