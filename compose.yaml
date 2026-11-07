@@ -1,0 +1,61 @@
+services:
+  frontend:
+    build: ./frontend
+    environment:
+      API_KEY: ${API_KEY:?Configure API_KEY}
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
+    restart: unless-stopped
+    depends_on: [api]
+    expose: ['80', '8080']
+    networks: [default, dokploy-network]
+  api:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      FORWARDED_ALLOW_IPS: '*'
+    depends_on:
+      postgres: {condition: service_healthy}
+    expose: ['8000']
+    networks:
+      default:
+        aliases: [encurtador-api-interna]
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import os, urllib.request; from urllib.parse import urlsplit; host=urlsplit(os.environ['SHORT_BASE_URL']).hostname; request=urllib.request.Request('http://localhost:8000/health', headers={'Host':host}); urllib.request.urlopen(request, timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: shortener
+      POSTGRES_USER: shortener
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes: ['postgres_data:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U shortener -d shortener']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Cache descartável: não restaurar snapshots antigos depois de reiniciar.
+    command:
+      - redis-server
+      - --save
+      - ''
+      - --appendonly
+      - 'no'
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-64mb}
+      - --maxmemory-policy
+      - allkeys-lru
+volumes:
+  postgres_data:
+
+networks:
+  dokploy-network:
+    external: true
+    name: dokploy-network
