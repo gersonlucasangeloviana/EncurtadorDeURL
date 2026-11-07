@@ -1,8 +1,8 @@
 # Encurtador de URL
 
-Uma aplicação para criar links curtos HTTPS sem login, com nomes personalizados, pastas e paths públicos. O projeto explora decisões de arquitetura para um serviço que precisa redirecionar rapidamente, preservar os dados operacionais e registrar acessos de forma simples.
+Uma aplicação para criar links curtos HTTPS sem login, com nomes personalizados, pastas e paths públicos. O painel se identifica como **Encurtador de Links do Gerson Viana**. O projeto explora decisões de arquitetura para um serviço que precisa redirecionar rapidamente, preservar os dados operacionais e registrar acessos de forma simples.
 
-> **Estado:** implementação inicial em evolução. O aceite de desempenho e a validação da publicação no Dokploy seguem pendentes.
+> **Estado em 07/11/2026:** backend assíncrono implementado, com 30 testes unitários e 7 de integração aprovados. A versão anterior à migração foi testada no Dokploy; a publicação desta revisão assíncrona ainda precisa ser validada. O aceite de desempenho e a melhoria da persistência dos eventos sob carga permanecem pendentes. Veja [Testes e validação](#testes-e-validação).
 
 ## O que já existe
 
@@ -17,9 +17,10 @@ Relatórios, renomeação de pastas, alteração de endereços públicos, filtro
 
 ```mermaid
 flowchart LR
-    U[Visitante] --> N[Nginx]
-    P[Painel React] --> N
-    N --> API
+    U[Visitante] --> T[Traefik / HTTPS]
+    P[Painel React] --> T
+    T --> N[Nginx]
+    N --> API[API assíncrona]
     API --> R[(Redis)]
     API --> PG[(PostgreSQL)]
 ```
@@ -27,6 +28,8 @@ flowchart LR
 No backend, `backend/app/core.py` e `backend/app/domain.py` contêm as regras e os tipos do domínio. `backend/app/application/` concentra as operações e define as interfaces usadas para consultar e persistir dados. `backend/app/web.py` adapta HTTP para essas operações, `backend/app/infrastructure/` implementa o acesso ao PostgreSQL e ao Redis, e `backend/app/main.py` conecta as camadas. No frontend, `frontend/src/App.jsx` reúne os componentes e `frontend/src/api.js` concentra as chamadas HTTP.
 
 As rotas e as operações de entrada/saída do backend são assíncronas: PostgreSQL usa `AsyncSession` do SQLAlchemy com psycopg 3 e Redis usa `redis.asyncio`. Cada operação recebe sua própria sessão; as esperas por banco, cache e bloqueios transacionais usam `await`. A inicialização e a retenção de eventos também usam o driver assíncrono, e as conexões são encerradas no desligamento. As validações e os cálculos sem entrada/saída permanecem funções comuns. O formato de `DATABASE_URL` continua `postgresql+psycopg://...` e a mudança não exige migração das tabelas.
+
+O Dockerfile continua iniciando um processo Uvicorn. A migração não adicionou workers, containers, fila em memória ou fila no Redis. As rotas assíncronas não usam o pool de threads das rotas síncronas para executar suas esperas de entrada/saída; a concorrência continua sujeita aos limites dos serviços e dos pools de conexão.
 
 O PostgreSQL armazena links, pastas e paths compartilhados. O código curto e o destino são únicos globalmente. Uma sequência separada alimenta o gerador automático Feistel de 40 bits com BLAKE2b e Base62. Nomes escolhidos pelo usuário compartilham o mesmo espaço de códigos. A pasta organiza os links e o path faz parte da URL pública. Os registros são compartilhados entre todos os visitantes.
 
@@ -40,13 +43,13 @@ A gravação usa entrada/saída assíncrona, mas ainda é aguardada antes da res
 
 Um acerto no Redis resolve o destino sem consultar o PostgreSQL. O registro do acesso ainda grava no banco. A API consulta o banco quando falta uma entrada válida ou o Redis está indisponível. O cadastro não aquece o cache. O TTL padrão é de 30 minutos e o prazo do cache respeita a expiração do link. A API também verifica a expiração na leitura e usa `Cache-Control: no-store` nas respostas da rota curta.
 
-Antes de excluir um link, a API coordena a operação por código, remove a entrada e o marcador de preenchimento do Redis e só então altera o PostgreSQL. Se a invalidação falhar, a exclusão é recusada. O preenchimento do cache usa o mesmo bloqueio transacional e confere o marcador no Redis antes de publicar a entrada. O marcador expira em 5 segundos por padrão e é removido quando a publicação tem sucesso. A invalidação revoga o marcador. O Redis do Compose reinicia com o cache vazio e descarta chaves menos usadas ao atingir o limite configurado, de 64 MB por padrão.
+Antes de excluir um link, a API coordena a operação por código, remove a entrada e o marcador de preenchimento do Redis e só então altera o PostgreSQL. Se a invalidação falhar, a exclusão é recusada. O preenchimento do cache usa o mesmo bloqueio transacional e confere o marcador no Redis antes de publicar a entrada. O marcador expira em 5 segundos por padrão e é removido quando a publicação tem sucesso. A invalidação revoga o marcador. O Redis do Compose reinicia com o cache vazio e descarta chaves menos recentemente acessadas ao atingir o limite configurado, de 64 MB por padrão. Ele não está configurado como fila persistente.
 
-Se a gravação no banco falhar, a API tenta invalidar novamente. Caso a conexão falhe durante a confirmação da transação, a mensagem orienta atualizar a página e verificar o estado antes de repetir. A simulação local de perda da conexão antes e depois do `COMMIT` confirmou respostas `503` sem deixar uma entrada desatualizada no cache. O protocolo usa um único Redis descartável.
+Se a gravação no banco falhar, a API tenta invalidar novamente. Caso a conexão falhe durante a confirmação da transação, a mensagem orienta atualizar a página e verificar o estado antes de repetir. Na revisão anterior à migração assíncrona, a simulação local de perda da conexão antes e depois do `COMMIT` confirmou respostas `503` sem deixar uma entrada desatualizada no cache. A suíte assíncrona verifica também a corrida entre preenchimento e exclusão e a liberação do bloqueio após cancelamento. O protocolo usa um único Redis descartável.
 
 ## Executar
 
-A publicação prevista usa Docker Compose e Dokploy, com HTTPS configurado no proxy. Apenas o Nginx (`frontend`) participa da rede externa existente `dokploy-network`. A API, o PostgreSQL e o Redis ficam na rede privada do projeto. A rede externa precisa existir antes de iniciar o Compose.
+A implantação usa Docker Compose e Dokploy, com HTTPS configurado no Traefik. No Compose, apenas o Nginx (`frontend`) participa da rede externa existente `dokploy-network`. A API, o PostgreSQL e o Redis ficam na rede privada do projeto. A rede externa precisa existir antes de iniciar o Compose. O arquivo não publica portas no host; o acesso previsto passa pelo proxy.
 
 1. Copie `.env.example` para `.env`. Configure os domínios HTTPS e inclua os dois hosts em `ALLOWED_HOSTS`. O health check da API usa o host de `SHORT_BASE_URL`.
 2. Gere valores diferentes para `SHORT_CODE_KEY` e `API_KEY` com `python3 -c "import secrets; print(secrets.token_hex(32))"`. Configure `ADMIN_PASSWORD` com 16 a 128 caracteres ASCII visíveis e difíceis de adivinhar. Use a mesma senha em `POSTGRES_PASSWORD` e `DATABASE_URL`, aplicando codificação percentual na URL se a senha tiver caracteres reservados. A chave API fica no ambiente do Nginx e da API.
@@ -59,6 +62,8 @@ O painel é aberto e seu conteúdo é compartilhado. Cada exclusão exige a senh
 
 Acesse `/docs` no domínio do painel ou no domínio curto para consultar e experimentar as rotas no Swagger. O esquema OpenAPI está em `/openapi.json` e a documentação alternativa em `/redoc`. As operações incluem links (`/api/links`), pastas (`/api/projects`), paths (`/api/paths`), verificação de saúde (`/health`) e redirecionamentos públicos. A raiz `/api` não é uma operação de consulta; use os caminhos específicos exibidos na documentação.
 
+Essas rotas de documentação descrevem o código atual. Na validação publicada anterior, o painel ainda devolvia seu próprio HTML nessas URLs e o OpenAPI do domínio curto não declarava as credenciais. As correções estão no repositório e precisam ser conferidas após a publicação. Para verificar o health público em JSON, use `/health` no domínio curto; a configuração do painel não encaminha esse caminho à API. O health confirma que a aplicação responde, sem testar uma consulta ao PostgreSQL ou ao Redis.
+
 No domínio curto, use **Authorize** no Swagger para informar a `API_KEY`. Para operações de exclusão, informe também a senha de administrador. No domínio do painel, o Nginx fornece a chave API automaticamente; a senha de administrador continua necessária para exclusões. Não compartilhe essas credenciais.
 
 A versão anterior usava tabelas ligadas a usuários Google. A API identifica esse esquema pela coluna `links.owner_id` e interrompe a inicialização antes de modificá-lo. Migre os dados antes de reutilizá-los ou use um banco novo para testes.
@@ -70,10 +75,11 @@ Na inicialização, a API cria tabelas ausentes. Mudanças em tabelas existentes
 ```sh
 python3 -m pip install -r backend/requirements-dev.txt
 PYTHONPATH=backend python3 -m unittest discover -s backend/tests -v
-cd frontend && npm ci && npm run build
+npm --prefix frontend ci
+npm --prefix frontend run build
 ```
 
-A suíte automatizada cobre validação de URLs e nomes, geração de códigos, autorização, sanitização dos eventos e cenários simulados de cache. Em containers isolados com PostgreSQL, Redis e Nginx, a revisão também verificou conflitos concorrentes no cadastro, expiração, invalidação e recuperação após reiniciar o Redis.
+A suíte automatizada cobre validação de URLs e nomes, geração de códigos, autorização, sanitização dos eventos e cenários simulados de cache. A revisão anterior à migração assíncrona também verificou, em containers isolados com PostgreSQL, Redis e Nginx, conflitos concorrentes no cadastro, expiração, invalidação e recuperação após reiniciar o Redis.
 
 Para executar os testes unitários e de integração assíncrona com PostgreSQL e Redis reais, sem portas públicas nem volumes de produção:
 
@@ -84,6 +90,20 @@ docker compose -p shortener-async-qa -f backend/tests/compose.yml down -v
 
 Os testes de integração usam um banco exclusivo e descartável. Cobrem cadastro concorrente, cache, expiração, exclusão, ocultação de credenciais, Redis indisponível, retenção, proteção do esquema e liberação de bloqueios após cancelamento. A suíte unitária também verifica que 50 leituras pendentes no cache não impedem a resposta do health.
 
-O aceite ainda exige validar a implantação e medir a meta de menos de 100 ms com 50 acessos simultâneos no ambiente Dokploy.
+### Evidências e pendências
+
+Os resultados de 07/11/2026 se referem a revisões e ambientes distintos:
+
+| Ambiente e revisão | Resultado registrado |
+| --- | --- |
+| Dokploy, antes da migração async | HTTPS, fluxos principais e reutilização de conexões Traefik → Nginx → API verificados. Na rodada interna de 50 acessos: 50 redirecionamentos, p95 de 249,659 ms e 36 eventos persistidos. |
+| Backend async, ambiente local isolado | 30 testes unitários e 7 de integração aprovados; imagem de produção compilada, inicialização e encerramento verificados; 50 HEADs simultâneos retornaram 302. |
+| Eventos no teste HTTP local async | 46 registros para 52 tentativas, com seis avisos de falha. As 52 tentativas incluem um GET de aquecimento, 50 HEADs concorrentes e um GET após exclusão. |
+
+O sucesso do redirecionamento não garante a persistência do evento. Não foi feita uma comparação controlada de latência antes/depois da migração. As medidas externas incluem rede e TLS, e a rodada interna inclui Nginx e agendamento do cliente; nenhuma delas comprova, por si só, o p99 interno abaixo de 100 ms proposto na especificação.
+
+Faltam validar a publicação da revisão atual e sua documentação, concluir os cenários de cache vazio e Redis indisponível sob carga, verificar persistência/recuperação após reinício na VPS e validar os limites de requisições e a identificação do IP real. Fila, gravação em lotes e múltiplos workers foram discutidos, mas não implementados.
+
+Consulte o [relatório da publicação e da inspeção da VPS](docs/qa/2026-11-07/RELATORIO.md) e o [relatório da migração assíncrona](docs/qa/2026-11-07/MIGRACAO-ASYNC.md) para condições, limites e evidências de cada teste.
 
 A [especificação](docs/SPEC.md) reúne as regras detalhadas, decisões e pendências do projeto.

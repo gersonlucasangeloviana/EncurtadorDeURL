@@ -1,18 +1,22 @@
 # Especificação — Encurtador de URL
 
-Atualizada em 07/11/2026. Os requisitos abaixo descrevem a versão atual. As pendências de aceite estão na seção 13 e os comandos de execução estão no [README](../README.md).
+Atualizada em 07/11/2026, após a migração assíncrona. Os requisitos abaixo descrevem o código do repositório; não indicam que a mesma revisão já foi validada na VPS. As verificações concluídas e as pendências de aceite estão na seção 13, e os comandos de execução estão no [README](../README.md).
 
 ## 1. Produto, acesso e tecnologias
 
 O login Google foi considerado, mas removido para facilitar o uso nos testes. O painel é aberto e todos compartilham os dados: qualquer visitante pode consultar e criar links, pastas e paths. Excluir exige senha de administrador; alterações estão desativadas. O redirecionamento também é público.
 
+O painel se identifica como **Encurtador de Links do Gerson Viana**. Ele permite copiar o link curto e pede a senha de administrador em um diálogo de exclusão. O formulário de criação oferece destino, nome opcional, pasta e path; a definição de expiração permanece disponível somente pela API.
+
 O backend usa Python e FastAPI. O painel usa React, Vite e Nginx. PostgreSQL guarda os dados operacionais e os eventos de acesso em JSONB. Redis guarda resoluções de links.
 
 Todas as rotas do backend e as operações que acessam PostgreSQL ou Redis usam execução assíncrona. O PostgreSQL usa SQLAlchemy `AsyncSession` com psycopg 3, mantendo a URL `postgresql+psycopg://...`; Redis usa `redis.asyncio`. Sessões não são compartilhadas entre requisições. Inicialização, retenção e encerramento das conexões são aguardados. Inspeção e criação de metadados usam `AsyncConnection.run_sync`, que adapta a API de metadados do SQLAlchemy ao driver assíncrono. Validações e cálculos sem entrada/saída permanecem síncronos.
 
+O Dockerfile inicia um processo Uvicorn. A migração não adiciona processos, réplicas ou fila de eventos e não exige alteração das tabelas. As esperas nas rotas assíncronas não ocupam o pool de threads usado pelas rotas síncronas. Isso não remove os limites de conexões, CPU, memória e disco nem garante o aceite de desempenho.
+
 A composição da aplicação em `backend/app/main.py` conecta os adaptadores. A camada HTTP está em `backend/app/web.py`; as operações e suas interfaces estão em `backend/app/application/`. O domínio, em `backend/app/core.py` e `backend/app/domain.py`, é independente dos frameworks. Os adaptadores em `backend/app/infrastructure/` implementam as interfaces usadas pela aplicação. No painel, os componentes usam as funções de `frontend/src/api.js` para acessar a API.
 
-A publicação prevista usa uma VPS gerenciada pelo Dokploy. Dockerfiles constroem as imagens e o Docker Compose descreve serviços, volumes e redes. O ambiente fornece domínios e conexões.
+A implantação usa uma VPS gerenciada pelo Dokploy. Dockerfiles constroem as imagens e o Docker Compose descreve serviços, volumes e redes. O ambiente fornece domínios e conexões. A versão anterior à migração async foi testada na VPS; a revisão assíncrona tem validação local registrada, conforme a seção 13.
 
 ## 2. URLs públicas, nomes e pastas
 
@@ -102,7 +106,7 @@ HTTPS é obrigatório. Rejeitar HTTP e outros esquemas em vez de trocar silencio
 
 A classificação de IPs literais usa `ipaddress` e verifica multicast e endereços reservados separadamente. [Python urllib.parse](https://docs.python.org/3/library/urllib.parse.html) e [Python ipaddress](https://docs.python.org/3.12/library/ipaddress.html)
 
-A aplicação não acessará o destino para baixar HTML, gerar preview, seguir redirecionamentos ou testar sua disponibilidade. A resolução de link curto também não fará DNS externo nem HTTP para validar o destino; isso evita colocar essas chamadas na meta de 100 ms.
+A aplicação não acessa o destino para baixar HTML, gerar preview, seguir redirecionamentos ou testar sua disponibilidade. A resolução de link curto também não faz DNS externo nem HTTP para validar o destino; isso evita colocar essas chamadas na meta de 100 ms.
 
 Bloquear IP literal privado e nomes conhecidos não prova que um domínio público continuará resolvendo para IP público. DNS rebinding e redirecionamentos externos permanecem limites dessa política. Se uma versão futura buscar destinos pelo servidor, deverá validar os IPs resolvidos e cada redirecionamento no momento da conexão. [OWASP SSRF](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
 
@@ -122,6 +126,14 @@ O login Google foi planejado, mas removido para facilitar os testes. Não há co
 
 A API exige `X-API-Key` para `/api` e `/api/…`, com resposta `401` para chave ausente ou inválida. Requisições `DELETE` exigem também `X-Admin-Password`, com resposta `403` para senha ausente ou inválida. O Nginx substitui a chave enviada pelo cliente somente na porta do painel. O painel tem limite de 30 requisições por minuto por IP, com rajada de 20, e limite adicional de 5 exclusões por minuto, com rajada de 2. O domínio curto tem limite de 20 requisições por segundo por IP, com rajada de 50. Os limites globais são independentes. O painel admite 20 por segundo, com rajada de 60. O domínio curto admite 100 por segundo, com rajada de 100. Requisições acima dos limites recebem `429`. O Nginx usa dois buffers grandes de 4 KiB para cabeçalhos e aceita `X-Forwarded-For` para fins de identificação do cliente apenas do proxy configurado em `TRUSTED_PROXY_CIDR`.
 
+### 6.1. Documentação e health
+
+O código disponibiliza Swagger em `/docs`, ReDoc em `/redoc` e OpenAPI em `/openapi.json`. O Nginx encaminha esses caminhos à API nos dois domínios. O esquema declara `X-API-Key` nas operações de gerenciamento e exige também `X-Admin-Password` nas exclusões. As páginas de documentação são públicas; declarar a autenticação no esquema não substitui a validação da API.
+
+No painel, as chamadas a `/api/` recebem a chave interna do Nginx. No domínio curto, o usuário deve informar a chave no Swagger. Na validação publicada anterior, as rotas de documentação do painel e a declaração de credenciais do OpenAPI ainda divergiam deste contrato; as correções do repositório precisam de conferência na versão publicada.
+
+O health público em JSON está no domínio curto, em `/health`; na porta do painel esse caminho cai no HTML da aplicação. O endpoint retorna `{"status":"ok"}` quando a API responde, sem consultar banco ou cache. Portanto, o health não comprova a disponibilidade de todas as dependências.
+
 ## 7. Redis e redirecionamento
 
 O cadastro não preenche o cache. A resolução consulta o Redis primeiro. Se a entrada estiver ausente ou malformada, consulta o PostgreSQL e tenta preencher o cache quando o link pode redirecionar. Quando o Redis está indisponível, o PostgreSQL ainda resolve o link e a aplicação devolve a resposta sem preencher o cache.
@@ -132,7 +144,7 @@ Excluir um link existente exige invalidar o Redis **antes** de confirmar a alter
 
 Para coordenar processos, mutações e preenchimentos usam um bloqueio consultivo transacional do PostgreSQL por código. Após obter o bloqueio, o preenchimento registra no Redis um marcador aleatório antes de consultar o banco. A gravação da entrada só acontece se o marcador ainda existir e coincidir. A mesma operação atômica remove o marcador após gravar a entrada. Marcadores expiram em 5 segundos por padrão, e a invalidação também os remove para impedir que um preenchimento anterior volte a publicar dados antigos.
 
-O protocolo coordena dois serviços independentes. O Compose configura um único Redis descartável, que reinicia sem restaurar snapshots e descarta chaves menos usadas ao atingir o limite padrão de 64 MB. A simulação local de perda da conexão antes e depois do `COMMIT` do PostgreSQL confirmou respostas `503` e consistência com o estado gravado no banco. Replicação e failover do Redis ficam fora do escopo.
+O protocolo coordena dois serviços independentes. O Compose configura um único Redis descartável, sem snapshots ou AOF, que reinicia vazio e descarta chaves menos recentemente acessadas ao atingir o limite padrão de 64 MB (`allkeys-lru`). Essa configuração não fornece uma fila persistente de eventos. Na revisão anterior à migração async, a simulação local de perda da conexão antes e depois do `COMMIT` do PostgreSQL confirmou respostas `503` e consistência com o estado gravado no banco. Na suíte assíncrona, foram verificados a corrida entre preenchimento e exclusão e o rollback/liberação do bloqueio após cancelamento. Replicação e failover do Redis ficam fora do escopo.
 
 O backend atende `GET` e `HEAD` nas rotas curtas e inclui `Cache-Control: no-store` nas respostas de resolução. O resultado é `302` com `Location` para um link ativo e válido, `404` para código inexistente, path divergente ou link pausado, e `410` para link excluído ou expirado com path correspondente. [HTTP](https://www.rfc-editor.org/rfc/rfc9110.html)
 
@@ -145,6 +157,18 @@ Meta mantida: resolver o link e responder ao redirecionamento em menos de 100 ms
 Simultaneidade não define sozinha acessos por segundo, cauda de latência ou capacidade de disco. A implementação deverá medir cache preenchido, cache vazio e Redis indisponível. A gravação do evento no PostgreSQL usa entrada/saída assíncrona, mas continua sendo aguardada antes da resposta e deve ser incluída na medição. Async não representa uma fila de eventos nem comprova por si só ganho de latência ou ausência de perdas por saturação.
 
 Ainda falta fixar percentil e fronteira de medição. Proposta: p99 abaixo de 100 ms entre chegada ao backend e resposta, sob 50 acessos simultâneos, sem incluir DNS, handshake TLS, rede do visitante ou carregamento do destino. Essa proposta não é uma garantia já comprovada.
+
+### 8.1. Medições registradas
+
+As rodadas de 07/11/2026 têm fronteiras diferentes:
+
+| Revisão e cenário | Resultado | Limite da interpretação |
+| --- | --- | --- |
+| Antes de async, 50 GETs externos para link previamente acessado | 50/50 redirecionamentos; p95 430,32 ms | Inclui conexão, TLS, rede, proxy e agendamento do cliente. |
+| Antes de async, 50 GETs a partir da VPS pelo Nginx | 50/50 redirecionamentos; p95 249,659 ms; p99 261,025 ms; 36/50 eventos gravados | Inclui cliente, conexão interna e Nginx; não é tempo exclusivo do backend. |
+| Async, imagem de produção executada localmente | 50/50 HEADs concorrentes retornaram 302; 46/52 eventos gravados no fluxo completo | As 52 tentativas incluem dois GETs adicionais. Não houve comparação controlada de latência antes/depois. |
+
+Esses testes não encerram o aceite de desempenho. Não é válido atribuir toda a latência à rede externa, nem deduzir o ganho da migração comparando ambientes ou contagens diferentes. Condições e amostras estão no [relatório da publicação/VPS](qa/2026-11-07/RELATORIO.md) e no [relatório da migração](qa/2026-11-07/MIGRACAO-ASYNC.md).
 
 ## 9. Eventos e coleta de headers
 
@@ -168,9 +192,13 @@ A API insere diretamente cada evento em `access_events`, com uma chave numérica
 
 A gravação usa uma transação própria e entrada/saída assíncrona, aguardada com `await` antes da resposta. Não há fila em memória ou Redis nesta versão. As gravações de eventos usam até quatro conexões separadas das operações de links, com espera de até 20 ms por uma conexão livre e limite de 100 ms por instrução no servidor. Se a gravação falhar, a API registra um aviso sem o payload e devolve o resultado da resolução. A cada 30 segundos, a API remove até 10.000 registros anteriores à janela dos `ANALYTICS_MAX_EVENTS` IDs mais recentes. A disponibilidade do PostgreSQL continua necessária para resolver cache vazio e gerenciar links. A meta de desempenho deve ser validada com a escrita e a limpeza ativas.
 
+Não há repetição automática nem recuperação garantida de eventos cuja gravação falhou. Isso foi observado tanto na revisão publicada anterior (14 eventos ausentes em uma rodada de 50) quanto no teste local async (seis ausentes em 52 tentativas). O aviso atual não identifica a causa específica; não se deve atribuir todas as falhas ao timeout do pool sem medição adicional. Fila limitada, processamento em lotes e persistência da fila são possibilidades de evolução, ainda sem implementação ou decisão sobre a tolerância a perdas.
+
 ## 11. Configuração pelo ambiente
 
 Parâmetros de implantação e negócio devem estar no `.env`, com nomes documentados e defaults no `.env.example`. Não hardcodar domínios, conexões, chave/alfabeto, TTL. Segredos reais não entram no repositório.
+
+Na implementação atual, alguns limites técnicos permanecem no código: quatro conexões para eventos sem overflow, espera de 20 ms pelo pool, timeout de 100 ms por instrução de eventos e retenção a cada 30 segundos em lotes de até 10.000. O Dockerfile inicia um processo Uvicorn. A migração async não criou variáveis de ambiente para esses limites nem exige novas credenciais.
 
 | Grupo | Variáveis e padrões |
 | --- | --- |
@@ -196,16 +224,31 @@ A rede externa `dokploy-network` deve existir antes de subir o Compose. O proxy 
 
 Na inicialização, a API cria tabelas ausentes e compara a impressão digital do gerador registrada no banco. Se detectar `links.owner_id`, interrompe a inicialização para que o esquema anterior seja migrado. Alterações em tabelas já existentes exigem migração separada.
 
+Na inspeção da VPS em 07/11/2026, a reutilização de conexões foi confirmada nos dois trechos, Traefik → Nginx e Nginx → API, com 12 chamadas sequenciais de health em cada cenário. O Nginx observado era 1.31.8; nenhum ajuste de keep-alive foi necessário. A imagem do frontend usa a tag `nginx:alpine`, portanto a versão observada não está fixada pelo Dockerfile. Esses testes de transporte não medem o custo da persistência de eventos nem comprovam capacidade sob carga sustentada.
+
 Backups automatizados, alta disponibilidade, filtro de bots e relatórios ficam fora do escopo atual. [Dokploy](https://docs.dokploy.com/docs/core/docker-compose/domains)
 
-## 13. Pendências remanescentes
+## 13. Verificações concluídas e pendências
 
-1. **Publicação:** validar TLS, domínios, redes, volume e health checks no Dokploy.
-2. **Aceite de desempenho:** fechar o percentil e a fronteira de medição, e testar os 100 ms com 50 acessos simultâneos no Dokploy.
-3. **Evolução:** avaliar relatórios ou alterações futuras de URLs públicas.
+### 13.1. Evidências disponíveis em 07/11/2026
+
+- **Versão anterior à migração, no Dokploy:** HTTPS e redirecionamento HTTP → HTTPS, health público, fluxos principais de cadastro/redirecionamento/exclusão, validações, duplicidades, expiração e autenticação exercitados. Reutilização das conexões internas confirmada na VPS. A documentação publicada ainda apresentava as divergências descritas na seção 6.1.
+- **Versão async, localmente:** 30 testes unitários e 7 testes com PostgreSQL 16 e Redis 7 reais aprovados; imagem de produção compilada e fluxo HTTP exercitado com 50 HEADs concorrentes; inicialização e encerramento concluídos sem traceback. A suíte inclui liberação de bloqueios após cancelamento, proteção do esquema e consistência entre preenchimento do cache e exclusão.
+- **Persistência de eventos:** perdas observadas nos dois ambientes, conforme as seções 8 e 10. Respostas 302 bem-sucedidas não comprovam a gravação de todos os acessos.
+
+Os comandos para reproduzir os testes isolados estão no [README](../README.md#testes-e-validação). Os relatórios registram o estado observado em cada rodada: [publicação/VPS](qa/2026-11-07/RELATORIO.md) e [migração async](qa/2026-11-07/MIGRACAO-ASYNC.md).
+
+### 13.2. Trabalho restante
+
+1. **Revisão publicada:** confirmar que o Dokploy executa a revisão async e repetir os fluxos e as rotas de documentação. A validação anterior não comprova a implantação desta revisão.
+2. **Infraestrutura:** concluir a verificação de isolamento de redes, volumes, persistência e recuperação após reinício na VPS; validar também limites de requisições e a identificação do IP real pelo proxy.
+3. **Desempenho:** fechar percentil e fronteira de medição; medir 50 acessos simultâneos na revisão async com cache preenchido, cache vazio e Redis indisponível, incluindo escrita/limpeza de eventos e contagem de falhas.
+4. **Eventos:** medir causas e frequência das perdas e definir o comportamento desejado sob saturação antes de implementar fila, lotes ou alterar os pools. Async sozinho não encerra esse ponto.
+5. **Evolução fora do escopo atual:** relatórios, edição de URLs públicas, backups automatizados e alta disponibilidade.
 
 ## 14. Critérios de aceite
 
+- Rotas e acesso a PostgreSQL/Redis assíncronos; esperas de entrada/saída não bloqueiam o health e operações canceladas liberam suas conexões e bloqueios.
 - Painel e redirecionamento públicos; API de gerenciamento exige chave interna e possui limite de requisições no painel. Exclusões exigem senha de administrador.
 - URL somente HTTPS, dentro do limite configurado de até 250 caracteres, sem credenciais embutidas e com as validações da seção 5.
 - Concorrência não permite duplicar destino, código/nome final ou path exclusivo; mensagens não revelam outro usuário.
